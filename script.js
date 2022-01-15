@@ -1,9 +1,8 @@
 /**
- * @param {number} nb_rows integer number of rows
- * @param {number} nb_columns integer number of columns
- * @returns fills the grid rows * columns squares
+ * @returns fills the grid with rows * columns squares
  */
-function SetupGrid(nb_rows, nb_columns) {
+function SetupGrid() {
+	const container = $('.container')
 	var square = document.createElement('div')
 	square.className = 'square'
 	container.attr('style', `--number: ${nb_rows};`)
@@ -13,17 +12,44 @@ function SetupGrid(nb_rows, nb_columns) {
 }
 
 /**
+ * @returns creates and fills the 2D array of squares
+ */
+function SetupArray() {
+	let square_array = []
+	let squares = $('.square')
+
+	let i = 0
+	while (i < nb_rows) {
+		square_array[i] = []
+		i++
+	}
+
+	i = 0
+	let j
+	while (i < nb_rows) {
+		j = 0
+		while (j < nb_columns) {
+			square_array[i][j] = squares[j + nb_rows * i]
+			j++
+		}
+		i++
+	}
+
+	return square_array
+}
+
+/**
  * @returns adds the click event that adds the 'spawn' class
  */
 function Spawn() {
 	$('html').off('click')
 	$('html').off('mouseover')
-	if (cpt_spawn < 1) {
+	if (!cpt_spawn) {
 		$('html').click( e => {
 			if (e.target.matches('.square') && !e.target.matches('.destination')) {
 				e.target.classList.add('spawn')
 				e.target.classList.remove('wall')
-				cpt_spawn++
+				cpt_spawn = true
 				$('html').off('click')
 			}
 		})
@@ -36,12 +62,12 @@ function Spawn() {
  function Destination() {
 	$('html').off('click')
 	$('html').off('mouseover')
-	if (cpt_destination < 1) {
+	if (!cpt_destination) {
 		$('html').click( e => {
 			if (e.target.matches('.square') && !e.target.matches('.spawn')) {
 				e.target.classList.add('destination')
 				e.target.classList.remove('wall')
-				cpt_destination++
+				cpt_destination = true
 				$('html').off('click')
 			}
 		})
@@ -80,17 +106,13 @@ function Reset() {
 	let reset_img = $('.btn-reset img')
 	reset.off('click')
 	reset_img.addClass('active')
-	setTimeout(() => {
+	setTimeout( _ => {
 		reset_img.removeClass('active')
-		reset.click( e => {
-			Reset()
-		})
+		reset.click( _ => Reset() )
 	}, 2000)
-	squares.each( function () {
-		$(this).removeClass(['spawn', 'destination', 'wall'])
-	})
-	cpt_spawn = 0
-	cpt_destination = 0
+	$('.spawn, .destination, .wall').removeClass(['spawn', 'destination', 'wall'])
+	cpt_spawn = false
+	cpt_destination = false
 }
 
 /**
@@ -110,35 +132,13 @@ function GetCoordinates(square) {
 }
 
 /**
- * @param {number} column integer number of the column
- * @param {number} row integer number of the row
- * @returns {HTMLElement} returns the square corresponding to the coordinates
- */
-function GetSquare(column, row) {
-	let ct = document.querySelector('.container')
-
-	let ct_left = ct.offsetLeft
-	let ct_top = ct.offsetTop
-
-	let sq_left = column * 17
-	let sq_top = row * 17
-
-	for (let i = 0; i < squares.length; i++) {
-		if (squares[i].offsetLeft - ct_left === sq_left && squares[i].offsetTop - ct_top === sq_top) {
-			return squares[i]
-		}
-	}
-}
-
-/**
  * @returns adds the 'parcours' class to the diagonal and anti-diagonal
  */
 function Diagonal() {
 	let i = 0, j = 0
-	let sq_column, sq_row
 
 	while (i < nb_columns && j < nb_rows) {
-		$(GetSquare(i, j)).addClass('parcours')
+		$(square_array[i][j]).addClass('parcours')
 		i++
 		j++
 	}
@@ -147,7 +147,7 @@ function Diagonal() {
 	j = 0
 
 	while (i >= 0 && j < nb_rows) {
-		$(GetSquare(i, j)).addClass('parcours')
+		$(square_array[i][j]).addClass('parcours')
 		i--
 		j++
 	}
@@ -155,31 +155,23 @@ function Diagonal() {
 
 
 
-const container = $('.container')
 
+
+/***************number of columns and rows***************/
 var nb_rows, nb_columns
 nb_rows = nb_columns = 45
 
-SetupGrid(nb_rows, nb_columns)
+SetupGrid()
+square_array = SetupArray()
 
-var squares = $('.square')
+cpt_spawn = false
+$('.btn-spawn').click( _ => Spawn() )
 
-cpt_spawn = 0
-$('.btn-spawn').click( e => {
-	Spawn()
-})
+cpt_destination = false
+$('.btn-destination').click( _ => Destination() )
 
-cpt_destination = 0
-$('.btn-destination').click( e => {
-	Destination()
-})
+$('.btn-wall').click( _ => Walls() )
 
-$('.btn-wall').click( e => {
-	Walls()
-})
-
-$('.btn-reset').click( e => {
-	Reset()
-})
+$('.btn-reset').click( _ => Reset() )
 
 Diagonal()
