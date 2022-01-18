@@ -138,7 +138,7 @@ function GetCoordinates(square) {
 	let sq_row = Math.abs((ct_top - square.offset().top) / sq_size);
 	let sq_column = Math.abs((ct_left - square.offset().left) / sq_size);
 
-	return [sq_row, sq_column];
+	return [Math.round(sq_row), Math.round(sq_column)];
 	/***************get the i and j directly from the array, not the offset***************/
 }
 
@@ -255,4 +255,4 @@ $('.btn-reset').click( _ => Reset() )
 
 Event_Play();
 
-ParcoursTest();
+// ParcoursTest();
