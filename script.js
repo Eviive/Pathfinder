@@ -3,11 +3,11 @@
  */
 function SetupGrid() {
 	let container = $('.container');
-	let square = document.createElement('span');
-	square.className = 'square';
+	let square = $('<span></span>').clone()
+	square.addClass('square');
 	container.attr('style', `--sq-number: ${nb_rows}; --sq-size: ${sq_size}px`);
 	for (let i = 0; i < nb_rows * nb_columns; i++) {
-		container.append(square.cloneNode(true));
+		square.clone().appendTo(container);
 	}
 }
 
@@ -77,7 +77,7 @@ function Spawn() {
 }
 
 /**
- * @returns Adds a click event that that triggers the mouseover event that adds the 'wall' class
+ * @returns Adds a click event that triggers the mouseover event that adds the 'wall' class
  */
 function Walls() {
 	$('html').off('click');
@@ -202,10 +202,14 @@ function ParcoursTest() {
  * @returns Sets up the click event on the play button
  */
 function Event_Play() {
-	$('.btn-play').click( _ => {
-		var [spawn_row, spawn_column, destination_row, destination_column] = Play();
-		console.log(spawn_row, spawn_column, destination_row, destination_column);
-	})
+	let coordinates = Play();
+	if (coordinates.length) {
+		console.log('algo');
+	}
+	else
+	{
+		console.log('Il manque le spawn ou la destination');
+	}
 }
 
 /**
@@ -221,12 +225,12 @@ function Play() {
 	if (sq_spawn.length && sq_destination.length) {
 		let [spawn_row, spawn_column] = GetCoordinates(sq_spawn);
 		let [destination_row, destination_column] = GetCoordinates(sq_destination);
-		Event_Play();
+		play.click(Event_Play);
 		return [spawn_row, spawn_column, destination_row, destination_column];
 	}
 	else
 	{
-		Event_Play();
+		play.click(Event_Play);
 		return [];
 	}
 }
@@ -244,15 +248,18 @@ SetupGrid();
 square_array = SetupArray();
 
 cpt_spawn = true;
-$('.btn-spawn').click( _ => Spawn() )
+$('.btn-spawn').click(Spawn)
 
 cpt_destination = true;
-$('.btn-destination').click( _ => Destination() )
+$('.btn-destination').click(Destination)
 
-$('.btn-wall').click( _ => Walls() )
+$('.btn-wall').click(Walls)
 
-$('.btn-reset').click( _ => Reset() )
+$('.btn-reset').click(Reset)
 
 Event_Play();
 
 // ParcoursTest();
+
+/***************Use a canvas to draw the grid***************/
+/***************Adapt the event listeners***************/

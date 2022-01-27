@@ -4,8 +4,10 @@
 
 html,
 body {
-	min-height: 100%;
+	min-height: 100vh;
 }
+
+/***************faire la palette de couleur avec la composition de variable***************/
 
 body {
 	--bg-color: hsl(240, 6%, 10%);
