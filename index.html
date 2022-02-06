@@ -1,28 +1,37 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
 	<meta charset="UTF-8">
 	<link rel="stylesheet" href="style.css">
 	<script src="script.js" async></script>
-	<title>Canvas</title>
+	<title>Pathfinding Algorithm</title>
 </head>
 <body>
 	<header>
-		<button class="btn-spawn">Place spawn : 1</button>
-		<button class="btn-destination">Place destination : 1</button>
-		<button class="btn-wall">Place walls</button>
+		<button id="btn-spawn">Place spawn : 1</button>
+		<button id="btn-destination">Place destination : 1</button>
+		<button id="btn-wall">Place walls</button>
 	</header>
 	
 	<canvas></canvas>
 	
 	<div class="wrapper-resize">
 		<div class="resize">
-			<img src="Images/warning.svg" alt="Attention !">
-			<span>Modifier la taille de votre fenêtre arrêtera l'algorithme en cours.</span>
-			<button onclick="clickCloseResize(this.offsetParent)">
-				<img src="Images/close.svg" alt="Fermer">
+			<img src="Images/warning.svg" alt="Warning !" draggable="false">
+			<span>Changing the size of your window will stop the algorithm.</span>
+			<button id="btn-resize">
+				<img src="Images/close.svg" alt="Close" draggable="false">
 			</button>
 		</div>
 	</div>
+
+	<footer>
+		<button id="btn-play">
+			<img src="Images/play.png" alt="Play" draggable="false">
+		</button>
+		<button id="btn-reset">
+			<img src="Images/reset.svg" alt="Reset" draggable="false">
+		</button>
+	</footer>
 </body>
 </html>
