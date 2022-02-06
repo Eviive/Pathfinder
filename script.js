@@ -1,265 +1,194 @@
-/**
- * @returns Fills the grid with rows * columns squares
- */
-function SetupGrid() {
-	let container = $('.container');
-	let square = $('<span></span>').clone()
-	square.addClass('square');
-	container.attr('style', `--sq-number: ${nb_rows}; --sq-size: ${sq_size}px`);
-	for (let i = 0; i < nb_rows * nb_columns; i++) {
-		square.clone().appendTo(container);
+let body = document.body;
+let canvas = document.querySelector('canvas');
+let context = canvas.getContext("2d");
+
+let removeActive = (element) => {
+	element.classList.remove("active");
+};
+
+let squareSize = 17;
+let lineWidth = 2;
+let pathColor = "#d6d6d6";
+
+let canvasMap = [];
+let exteriorWalls = (x, y) => {
+	if (x == 0 || x == canvas.width / squareSize - 1 || y == 0 || y == canvas.height / squareSize - 1) {
+		return true;
+	}
+	return false;
+};
+
+let resizeActive = false;
+
+class Square {
+	constructor(xPos, yPos, size, color) {
+		this.xPos = xPos + lineWidth / 1.2;
+		this.yPos = yPos + lineWidth / 1.2;
+		this.size = size - lineWidth * 1.2;
+		this.color = color;
+	}
+
+	draw() {
+		context.fillStyle = this.color;
+		context.fillRect(this.xPos, this.yPos, this.size, this.size);
+	}
+}
+
+class Circle {
+	constructor(xPos, yPos, radius, color) {
+		this.xPos = xPos + squareSize / 2;
+		this.yPos = yPos + squareSize / 2;
+		this.radius = radius;
+		this.color = color;
+	}
+
+	draw() {
+		context.beginPath();
+		context.lineWidth = lineWidth;
+		context.arc(this.xPos, this.yPos, this.radius, 0, Math.PI * 2, false);
+		context.fillStyle = this.color;
+		context.fill();
+		context.closePath();
 	}
 }
 
 /**
- * @returns {Array.<Array.<HTMLSpanElement>>} Creates and fills the 2D array of squares
+ * @returns makes the canvas responsive
  */
-function SetupArray() {
-	let square_array = [];
-	let squares = $('.square');
-
-	let i = 0;
-	while (i < nb_rows) {
-		square_array[i] = [];
-		i++;
+function canvasResponsive(event) {
+	/***************if the function is called by an event***************/
+	if (event && !resizeActive && body.clientWidth > 500) {
+		let resizeWrapper = document.querySelector('.wrapper-resize');
+		let resizeElement = document.querySelector('.resize');
+		resizeActive = true;
+		resizeWrapper.classList.add("active");
+		resizeElement.classList.add("active");
+		resizeElementTimeout = setTimeout(() => {
+			removeActive(resizeElement);
+			setTimeout(() => {
+				removeActive(resizeWrapper);
+			}, 500);
+			resizeActive = false;
+		}, 4000);
 	}
-
-	i = 0;
-	let j;
-	while (i < nb_rows) {
-		j = 0;
-		while (j < nb_columns) {
-			square_array[i][j] = squares[j + nb_rows * i];
-			j++;
-		}
-		i++;
-	}
-
-	return square_array;
-}
-
-/**
- * @returns Adds the click event that adds the 'spawn' class
- */
-function Spawn() {
-	$('html').off('click');
-	$('html').off('mouseover');
-	if (cpt_spawn) {
-		$('html').click( e => {
-			if (e.target.matches('.square') && !e.target.matches('.destination')) {
-				e.target.classList.add('spawn');
-				e.target.classList.remove('wall');
-				cpt_spawn = false;
-				$('.btn-spawn').text('Place spawn : 0');
-				$('html').off('click');
+	
+	let bodyMinWidth = parseInt(window.getComputedStyle(body).getPropertyValue("min-width"));
+	let pourcentage = function (value) {
+		return value / 100 * 75;
+	};
+	canvas.height = Math.ceil(Math.max(Math.min(pourcentage(window.innerHeight), pourcentage(window.innerWidth)) / squareSize, pourcentage(bodyMinWidth) / squareSize)) * squareSize;
+	canvas.width = canvas.height;
+	drawGrid();
+	
+	for (let i = 0; i < canvas.width / squareSize; i++) {
+		canvasMap[i] = [];
+		for (let j = 0; j < canvas.height / squareSize; j++) {
+			if (exteriorWalls(i, j)) {
+				canvasMap[i][j] = "wall";
 			}
-		})
-	}
-}
-
-/**
- * @returns Adds the click event that adds the 'destination' class
- */
- function Destination() {
-	$('html').off('click');
-	$('html').off('mouseover');
-	if (cpt_destination) {
-		$('html').click( e => {
-			if (e.target.matches('.square') && !e.target.matches('.spawn')) {
-				e.target.classList.add('destination');
-				e.target.classList.remove('wall');
-				cpt_destination = false;
-				$('.btn-destination').text('Place destination : 0');
-				$('html').off('click');
+			else {
+				canvasMap[i][j] = "empty";
 			}
-		})
-	}
-}
-
-/**
- * @returns Adds a click event that triggers the mouseover event that adds the 'wall' class
- */
-function Walls() {
-	$('html').off('click');
-	$('html').off('mouseover');
-	$('html').click( e => {
-		if (e.target.matches('.square')) {
-			e.target.classList.add('wall');
-			$('html').mouseover( f => {
-				if (f.target.matches('.square')) {
-					f.target.classList.add('wall');
-				}
-			})
-			$('html').click( g => {
-				if (g.target.matches('.square') || g.target.matches('.btn-wall') || g.target.matches('.btn-spawn')) {
-					$('html').off('click');
-					$('html').off('mouseover');
-				}
-			})
-			$('html').mouseover( g => {
-				if (!$(g.target).closest('.container').length) {
-					$('html').off('click');
-					$('html').off('mouseover');
-				}
-			})
 		}
-	})
+	}
+
+	// let previousSize = canvas.height;
+	// let ratio = canvas.height / previousSize;
+	// drawings.forEach(element => {
+	// 	element.xPos = element.xPos * ratio;
+	// 	element.yPos = element.yPos * ratio;
+	// 	element.width = element.width * ratio;
+	// 	element.height = element.height * ratio;
+	// 	element.updateSize();
+	// });
 }
 
 /**
- * @returns Resets the grid
+ * @returns draws the grid responsively
  */
-function Reset() {
-	let reset = $('.btn-reset');
-	let reset_img = $('.btn-reset img');
-	reset.off('click');
-	reset_img.addClass('active');
-	setTimeout( _ => {
-		reset_img.removeClass('active');
-		reset.click( _ => Reset() );
-	}, 1500)
-	$('.spawn, .destination, .wall').removeClass(['spawn', 'destination', 'wall']);
-	cpt_spawn = true;
-	$('.btn-spawn').text('Place spawn : 1');
-	cpt_destination = true;
-	$('.btn-destination').text('Place destination : 1');
+function drawGrid() {
+	let cSize = canvas.width;
+
+	context.beginPath();
+	context.lineWidth = lineWidth;
+	context.strokeStyle = pathColor;
+
+	for (let i = 0; i <= cSize; i = i + squareSize) {
+		
+		/***************rows***************/
+		context.moveTo(0, i);
+		context.lineTo(cSize, i);
+		
+		/***************columns***************/
+		context.moveTo(i, 0);
+		context.lineTo(i, cSize);
+	}
+
+	context.stroke();
+	context.closePath();
 }
 
-/**
- * @param {HTMLSpanElement} square
- * @returns {[number, number]} The coordinates of the square
- */
-function GetCoordinates(square) {
-	let ct = $('.container');
-
-	let ct_left = ct.offset().left;
-	let ct_top = ct.offset().top;
-
-	let sq_row = Math.abs((ct_top - square.offset().top) / sq_size);
-	let sq_column = Math.abs((ct_left - square.offset().left) / sq_size);
-
-	return [Math.round(sq_row), Math.round(sq_column)];
-	/***************get the i and j directly from the array, not the offset***************/
+function renderCanvas() {
+	context.clearRect(0, 0, canvas.width, canvas.height);
+	drawGrid();
+	Square.counter = 0;
+	Circle.counter = 0;
+	for (let i = 0; i < canvas.width / squareSize; i++) {
+		for (let j = 0; j < canvas.height / squareSize; j++) {
+			if (canvasMap[i][j] == "wall") {
+				let square = new Square(i * squareSize, j * squareSize, squareSize, "#ffffff");
+				square.draw();
+			}
+			else if (canvasMap[i][j] == "spawn") {
+				let square = new Square(i * squareSize, j * squareSize, squareSize, "#27d507");
+				square.draw();
+			}
+			else if (canvasMap[i][j] == "destination") {
+				let square = new Square(i * squareSize, j * squareSize, squareSize, "#ff0000");
+				square.draw();
+			}
+			else if (canvasMap[i][j] == "visited") {
+				let circle = new Circle(i * squareSize, j * squareSize, squareSize / 7, "#ff0000");
+				circle.draw();
+			}
+			else if (canvasMap[i][j] == "parcours") {
+				let square = new Square(i * squareSize, j * squareSize, squareSize, "#0000ff");
+				square.draw();
+				let circle = new Circle(i * squareSize, j * squareSize, squareSize / 7, "#ff0000");
+				circle.draw();
+			}
+		}
+	}
+	setTimeout(() => {
+		requestAnimationFrame(renderCanvas);
+	}, 1000 / 144);
 }
 
-/**
- * @returns Adds the 'parcours' class to the desired paths
- */
-function ParcoursTest() {
-	/***************diagonal***************/
-	let i = 0, j = 0;
-	while (i < nb_rows && j < nb_columns) {
-		$(square_array[i][j]).addClass('parcours');
-		i++;
-		j++;
-	}
+function clickCloseResize(element) {
+	clearTimeout(resizeElementTimeout);
+	removeActive(element);
+	setTimeout(() => {
+		removeActive(element.offsetParent);
+	}, 500);
+	resizeActive = false;
+}
 
-	/***************anti-diagonal***************/
-	i = nb_rows - 1;
-	j = 0;
-	while (i >= 0 && j < nb_columns) {
-		$(square_array[i][j]).addClass('parcours');
-		i--;
-		j++;
-	}
-
-	/***************middle vertical***************/
-	i = 0;
-	j = Math.floor(nb_columns / 2);
-	while (i < nb_rows) {
-		$(square_array[i][j]).addClass('parcours');
-		i++;
-	}
-
-	/***************middle horizontal***************/
-	i = Math.floor(nb_rows / 2);
-	j = 0;
-	while (j < nb_columns) {
-		$(square_array[i][j]).addClass('parcours');
-		j++;
-	}
-
-	/***************vertical sides***************/
-	i = 0;
-	j = 0;
-	while (i < nb_rows) {
-		$(square_array[i][j]).addClass('parcours');
-		$(square_array[i][j + nb_columns - 1]).addClass('parcours');
-		i++;
-	}
-
-	/***************horizontal sides***************/
-	i = 0;
-	j = 0;
-	while (j < nb_columns) {
-		$(square_array[i][j]).addClass('parcours');
-		$(square_array[i + nb_rows - 1][j]).addClass('parcours');
-		j++;
+function clickCanvas(event) {
+	let canvasX = Math.floor((event.clientX - canvas.offsetLeft) / squareSize);
+	let canvasY = Math.floor((event.clientY - canvas.offsetTop) / squareSize);
+	if (!(exteriorWalls(canvasX, canvasY))) {
+		if (canvasMap[canvasX][canvasY] == "wall") {
+			canvasMap[canvasX][canvasY] = "empty";
+		}
+		else {
+			canvasMap[canvasX][canvasY] = "wall";
+		}
 	}
 }
 
-/**
- * @returns Sets up the click event on the play button
- */
-function Event_Play() {
-	let coordinates = Play();
-	if (coordinates.length) {
-		console.log('algo');
-	}
-	else
-	{
-		console.log('Il manque le spawn ou la destination');
-	}
-}
+canvasResponsive();
+window.addEventListener("resize", canvasResponsive);
 
-/**
- * @returns Returns the coordinates of the spawn and the destination if they exist
- */
-function Play() {
-	let play = $('.btn-play');
-	play.off('click');
+requestAnimationFrame(renderCanvas);
 
-	let sq_spawn = $('.spawn');
-	let sq_destination = $('.destination');
-
-	if (sq_spawn.length && sq_destination.length) {
-		let [spawn_row, spawn_column] = GetCoordinates(sq_spawn);
-		let [destination_row, destination_column] = GetCoordinates(sq_destination);
-		play.click(Event_Play);
-		return [spawn_row, spawn_column, destination_row, destination_column];
-	}
-	else
-	{
-		play.click(Event_Play);
-		return [];
-	}
-}
-
-
-
-
-
-/***************number of columns and rows***************/
-var nb_rows, nb_columns, sq_size;
-nb_rows = nb_columns = 45;
-sq_size = 17;
-
-SetupGrid();
-square_array = SetupArray();
-
-cpt_spawn = true;
-$('.btn-spawn').click(Spawn)
-
-cpt_destination = true;
-$('.btn-destination').click(Destination)
-
-$('.btn-wall').click(Walls)
-
-$('.btn-reset').click(Reset)
-
-Event_Play();
-
-// ParcoursTest();
-
-/***************Use a canvas to draw the grid***************/
-/***************Adapt the event listeners***************/
+canvas.addEventListener("click", clickCanvas);

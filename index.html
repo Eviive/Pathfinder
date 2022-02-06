@@ -3,10 +3,8 @@
 <head>
 	<meta charset="UTF-8">
 	<link rel="stylesheet" href="style.css">
-	<link rel="icon" href="Images/graph.png">
-	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 	<script src="script.js" async></script>
-	<title>Algorithm Visualisation</title>
+	<title>Canvas</title>
 </head>
 <body>
 	<header>
@@ -14,14 +12,17 @@
 		<button class="btn-destination">Place destination : 1</button>
 		<button class="btn-wall">Place walls</button>
 	</header>
-	<div class="container"></div>
-	<footer>
-		<button class="btn-play">
-			<img src="Images/play.png" alt="Play" draggable="false">
-		</button>
-		<button class="btn-reset">
-			<img src="Images/reset.png" alt="Reset" draggable="false">
-		</button>
-	</footer>
+	
+	<canvas></canvas>
+	
+	<div class="wrapper-resize">
+		<div class="resize">
+			<img src="Images/warning.svg" alt="Attention !">
+			<span>Modifier la taille de votre fenêtre arrêtera l'algorithme en cours.</span>
+			<button onclick="clickCloseResize(this.offsetParent)">
+				<img src="Images/close.svg" alt="Fermer">
+			</button>
+		</div>
+	</div>
 </body>
 </html>
