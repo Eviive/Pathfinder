@@ -2,6 +2,22 @@ let body = document.body;
 let canvas = document.querySelector('canvas');
 let context = canvas.getContext("2d");
 
+let btnResize = document.querySelector('#btn-resize');
+let resizeActive = false;
+let btnSpawn = document.querySelector('#btn-spawn');
+let btnDestination = document.querySelector('#btn-destination');
+let btnWall = document.querySelector('#btn-wall');
+let btnPlay = document.querySelector('#btn-play');
+let btnReset = document.querySelector('#btn-reset');
+
+let btnStatus = null;
+let spawnStatus = false;
+let destinationStatus = false;
+
+/**
+ * @param {HTMLElement} element
+ * @returns removes the "active" class from the element
+ */
 let removeActive = (element) => {
 	element.classList.remove("active");
 };
@@ -11,14 +27,17 @@ let lineWidth = 2;
 let pathColor = "#d6d6d6";
 
 let canvasMap = [];
+/**
+ * @param {Number} x X position
+ * @param {Number} y Y position
+ * @returns {Boolean} checks if the coordinates are part of the exterior walls
+ */
 let exteriorWalls = (x, y) => {
 	if (x == 0 || x == canvas.width / squareSize - 1 || y == 0 || y == canvas.height / squareSize - 1) {
 		return true;
 	}
 	return false;
 };
-
-let resizeActive = false;
 
 class Square {
 	constructor(xPos, yPos, size, color) {
@@ -53,6 +72,7 @@ class Circle {
 }
 
 /**
+ * @param {EventListenerObject} event the object returned by the eventlistener that triggered the function
  * @returns makes the canvas responsive
  */
 function canvasResponsive(event) {
@@ -73,6 +93,10 @@ function canvasResponsive(event) {
 	}
 	
 	let bodyMinWidth = parseInt(window.getComputedStyle(body).getPropertyValue("min-width"));
+	/**
+	 * @param {Number} value 
+	 * @returns 75% of value
+	 */
 	let pourcentage = function (value) {
 		return value / 100 * 75;
 	};
@@ -128,11 +152,12 @@ function drawGrid() {
 	context.closePath();
 }
 
+/**
+ * @returns renders the canvas according to the 2D array canvasMap 60 times per second
+ */
 function renderCanvas() {
 	context.clearRect(0, 0, canvas.width, canvas.height);
 	drawGrid();
-	Square.counter = 0;
-	Circle.counter = 0;
 	for (let i = 0; i < canvas.width / squareSize; i++) {
 		for (let j = 0; j < canvas.height / squareSize; j++) {
 			if (canvasMap[i][j] == "wall") {
@@ -161,10 +186,14 @@ function renderCanvas() {
 	}
 	setTimeout(() => {
 		requestAnimationFrame(renderCanvas);
-	}, 1000 / 144);
+	}, 1000 / 60);
 }
 
-function clickCloseResize(element) {
+/**
+ * @returns closes the resize popup
+ */
+function clickResize() {
+	let element = btnResize.offsetParent;
 	clearTimeout(resizeElementTimeout);
 	removeActive(element);
 	setTimeout(() => {
@@ -173,21 +202,131 @@ function clickCloseResize(element) {
 	resizeActive = false;
 }
 
+/***************do one function instead of three***************/
+/**
+ * @returns changes the value of btnStatus to "spawn"
+ */
+function clickSpawn() {
+	btnStatus = "spawn";
+}
+
+/**
+ * @returns changes the value of btnStatus to "destination"
+ */
+function clickDestination() {
+	btnStatus = "destination";
+}
+
+/**
+ * @returns changes the value of btnStatus to "wall"
+ */
+function clickWall() {
+	btnStatus = "wall";
+}
+/************************************************************/
+
+/**
+ * @param {EventListenerObject} event the object returned by the eventlistener that triggered the function
+ * @returns places blocks according to the value of btnStatus
+ */
 function clickCanvas(event) {
-	let canvasX = Math.floor((event.clientX - canvas.offsetLeft) / squareSize);
-	let canvasY = Math.floor((event.clientY - canvas.offsetTop) / squareSize);
-	if (!(exteriorWalls(canvasX, canvasY))) {
-		if (canvasMap[canvasX][canvasY] == "wall") {
-			canvasMap[canvasX][canvasY] = "empty";
+	if (btnStatus != null) {
+		if (btnStatus == "wall") {
+			canvas.removeEventListener("click", clickCanvas);
+			canvas.addEventListener("mousemove", startMoveCanvas);
+			canvas.addEventListener("click", stopMoveCanvas, {once: true});
+			canvas.addEventListener("mouseout", stopMoveCanvas, {once: true});
 		}
 		else {
-			canvasMap[canvasX][canvasY] = "wall";
+			let canvasX = Math.floor((event.clientX - canvas.offsetLeft) / squareSize);
+			let canvasY = Math.floor((event.clientY - canvas.offsetTop) / squareSize);
+			if (!(exteriorWalls(canvasX, canvasY))) {
+				/*********do one function instead of if/else if for the spawn******
+				 *********and destination because they do the exact same thing*****/
+				if (btnStatus == "spawn") {
+					if (canvasMap[canvasX][canvasY] == "spawn") {
+						canvasMap[canvasX][canvasY] = "empty";
+						btnSpawn.innerHTML = "Place spawn : 1";
+						spawnStatus = false;
+					}
+					else if (!spawnStatus) {
+						if (canvasMap[canvasX][canvasY] == "destination") {
+							btnDestination.innerHTML = "Place destination : 1";
+							destinationStatus = false;
+						}
+						canvasMap[canvasX][canvasY] = "spawn";
+						btnSpawn.innerHTML = "Place spawn : 0";
+						spawnStatus = true;
+					}
+					btnStatus = null;
+				}
+				else if (btnStatus == "destination") {
+					if (canvasMap[canvasX][canvasY] == "destination") {
+						canvasMap[canvasX][canvasY] = "empty";
+							btnDestination.innerHTML = "Place destination : 1";
+							destinationStatus = false;
+					}
+					else if (!destinationStatus) {
+						if (canvasMap[canvasX][canvasY] == "spawn") {
+							btnSpawn.innerHTML = "Place spawn : 1";
+							spawnStatus = false;
+						}
+						canvasMap[canvasX][canvasY] = "destination";
+						btnDestination.innerHTML = "Place destination : 0";
+						destinationStatus = true;
+					}
+					btnStatus = null;
+				}
+			}
 		}
 	}
 }
 
+/**
+ * @param {EventListenerObject} event the object returned by the eventlistener that triggered the function
+ * @returns places walls at the position of the mouse if there isn't already a spawn or a destination
+ */
+function startMoveCanvas(event) {
+	let canvasX = Math.floor((event.clientX - canvas.offsetLeft) / squareSize);
+	let canvasY = Math.floor((event.clientY - canvas.offsetTop) / squareSize);
+	if (canvasMap[canvasX][canvasY] != "spawn" && canvasMap[canvasX][canvasY] != "destination") {
+		canvasMap[canvasX][canvasY] = "wall";
+	}
+	btnStatus = null;
+}
+
+/**
+ * @returns stops the event listener that allows to place walls
+ */
+function stopMoveCanvas() {
+	canvas.removeEventListener("mousemove", startMoveCanvas);
+	canvas.addEventListener("click", clickCanvas);
+}
+
+/**
+ * @returns starts the selected algorithm
+ */
+function clickPlay() {
+	// TODO
+}
+
+/**
+ * @returns resets the grid
+ */
+function clickReset() {
+	// TODO
+}
+
 canvasResponsive();
 window.addEventListener("resize", canvasResponsive);
+btnResize.addEventListener("click", clickResize);
+
+btnSpawn.addEventListener("click", clickSpawn);
+btnDestination.addEventListener("click", clickDestination);
+btnWall.addEventListener("click", clickWall);
+
+btnPlay.addEventListener("click", clickPlay);
+btnReset.addEventListener("click", clickReset);
 
 requestAnimationFrame(renderCanvas);
 
