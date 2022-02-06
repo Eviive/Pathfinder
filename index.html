@@ -3,7 +3,7 @@
 <head>
 	<meta charset="UTF-8">
 	<link rel="stylesheet" href="style.css">
-	<script src="script.js" async></script>
+	<script src="script.js" type="module" async></script>
 	<title>Pathfinding Algorithm</title>
 </head>
 <body>
@@ -14,12 +14,12 @@
 	</header>
 	
 	<canvas></canvas>
-	
-	<div class="wrapper-resize">
-		<div class="resize">
+
+	<div class="wrapper-popup">
+		<div class="popup">
 			<img src="Images/warning.svg" alt="Warning !" draggable="false">
-			<span>Changing the size of your window will stop the algorithm.</span>
-			<button id="btn-resize">
+			<span class="popup-msg"></span>
+			<button id="btn-popup">
 				<img src="Images/close.svg" alt="Close" draggable="false">
 			</button>
 		</div>

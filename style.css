@@ -39,7 +39,7 @@ header button {
 	padding: 12px 17px;
 	border: 0;
 	border-radius: 25px;
-	color: hsl(0deg, 2%, 85%);
+	color: white;
 	font-size: 1.5rem;
 	font-weight: bold;
 	background-color: hsla(240, 6%, 20%, 0.6);
@@ -61,9 +61,9 @@ canvas {
 	background-color: var(--bg-color);
 }
 
-/***************resize popup***************/
+/***************popup***************/
 
-.wrapper-resize {
+.wrapper-popup {
 	z-index: -1;
 	width: 400px;
 	height: 115px;
@@ -74,11 +74,11 @@ canvas {
 	overflow-x: hidden;
 }
 
-.wrapper-resize.active {
+.wrapper-popup.active {
 	z-index: 1;
 }
 
-.resize {
+.popup {
 	box-sizing: border-box;
 	width: 100%;
 	height: 100%;
@@ -96,11 +96,11 @@ canvas {
 	transition: transform .5s ease-in-out;
 }
 
-.resize.active {
+.popup.active {
 	transform: translateX(0);
 }
 
-.resize > img {
+.popup > img {
 	box-sizing: border-box;
 	width: 40%;
 	height: 100%;
@@ -111,11 +111,11 @@ canvas {
 	border-bottom-left-radius: inherit;
 }
 
-.resize span {
+.popup span {
 	margin-top: 7px;
 }
 
-.resize button {
+.popup button {
 	width: 28px;
 	height: 28px;
 	position: absolute;
@@ -127,7 +127,7 @@ canvas {
 	cursor: pointer;
 }
 
-.resize button img {
+.popup button img {
 	width: 100%;
 	height: 100%;
 }

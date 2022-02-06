@@ -1,18 +1,38 @@
 let body = document.body;
-let canvas = document.querySelector('canvas');
+let canvas = document.querySelector("canvas");
 let context = canvas.getContext("2d");
 
-let btnResize = document.querySelector('#btn-resize');
-let resizeActive = false;
-let btnSpawn = document.querySelector('#btn-spawn');
-let btnDestination = document.querySelector('#btn-destination');
-let btnWall = document.querySelector('#btn-wall');
-let btnPlay = document.querySelector('#btn-play');
-let btnReset = document.querySelector('#btn-reset');
+let btnPopup = document.querySelector("#btn-popup");
+let popupActive = false;
+let popupElementTimeout;
+
+let btnSpawn = document.querySelector("#btn-spawn");
+let btnDestination = document.querySelector("#btn-destination");
+let btnWall = document.querySelector("#btn-wall");
+let btnPlay = document.querySelector("#btn-play");
+let btnReset = document.querySelector("#btn-reset");
 
 let btnStatus = null;
 let spawnStatus = false;
 let destinationStatus = false;
+
+let squareSize = 17;
+let lineWidth = 2;
+let pathColor = "#d6d6d6";
+
+let canvasMap = [];
+
+/**
+ * @param {Number} x X position
+ * @param {Number} y Y position
+ * @returns {Boolean} checks if the coordinates are part of the exterior walls
+ */
+let exteriorWallsTest = (x, y) => {
+	if (x == 0 || x == canvas.width / squareSize - 1 || y == 0 || y == canvas.height / squareSize - 1) {
+		return true;
+	}
+	return false;
+};
 
 /**
  * @param {HTMLElement} element
@@ -22,21 +42,12 @@ let removeActive = (element) => {
 	element.classList.remove("active");
 };
 
-let squareSize = 17;
-let lineWidth = 2;
-let pathColor = "#d6d6d6";
-
-let canvasMap = [];
 /**
- * @param {Number} x X position
- * @param {Number} y Y position
- * @returns {Boolean} checks if the coordinates are part of the exterior walls
+ * @param {Number} value 
+ * @returns 75% of value
  */
-let exteriorWalls = (x, y) => {
-	if (x == 0 || x == canvas.width / squareSize - 1 || y == 0 || y == canvas.height / squareSize - 1) {
-		return true;
-	}
-	return false;
+let pourcentage = (value) => {
+	return value / 100 * 75;
 };
 
 class Square {
@@ -72,49 +83,42 @@ class Circle {
 }
 
 /**
+ * @param {String} popupText the text that the popup will display
+ * @returns triggers a popup
+ */
+function triggerPopup(popupText) {
+	let popupWrapper = document.querySelector(".wrapper-popup");
+	let popupElement = document.querySelector(".popup");
+	let popupSpan = document.querySelector(".popup-msg");
+	popupSpan.innerHTML = popupText;
+	popupActive = true;
+	popupWrapper.classList.add("active");
+	popupElement.classList.add("active");
+	popupElementTimeout = setTimeout(() => {
+		removeActive(popupElement);
+		setTimeout(() => {
+			removeActive(popupWrapper);
+		}, 500);
+		popupActive = false;
+	}, 4000);
+}
+
+/**
  * @param {EventListenerObject} event the object returned by the eventlistener that triggered the function
  * @returns makes the canvas responsive
  */
 function canvasResponsive(event) {
 	/***************if the function is called by an event***************/
-	if (event && !resizeActive && body.clientWidth > 500) {
-		let resizeWrapper = document.querySelector('.wrapper-resize');
-		let resizeElement = document.querySelector('.resize');
-		resizeActive = true;
-		resizeWrapper.classList.add("active");
-		resizeElement.classList.add("active");
-		resizeElementTimeout = setTimeout(() => {
-			removeActive(resizeElement);
-			setTimeout(() => {
-				removeActive(resizeWrapper);
-			}, 500);
-			resizeActive = false;
-		}, 4000);
+	if (event && !popupActive && body.clientWidth > 500) {
+		triggerPopup("Changing the size of your window will stop the algorithm.");
 	}
 	
 	let bodyMinWidth = parseInt(window.getComputedStyle(body).getPropertyValue("min-width"));
-	/**
-	 * @param {Number} value 
-	 * @returns 75% of value
-	 */
-	let pourcentage = function (value) {
-		return value / 100 * 75;
-	};
 	canvas.height = Math.ceil(Math.max(Math.min(pourcentage(window.innerHeight), pourcentage(window.innerWidth)) / squareSize, pourcentage(bodyMinWidth) / squareSize)) * squareSize;
 	canvas.width = canvas.height;
 	drawGrid();
-	
-	for (let i = 0; i < canvas.width / squareSize; i++) {
-		canvasMap[i] = [];
-		for (let j = 0; j < canvas.height / squareSize; j++) {
-			if (exteriorWalls(i, j)) {
-				canvasMap[i][j] = "wall";
-			}
-			else {
-				canvasMap[i][j] = "empty";
-			}
-		}
-	}
+
+	exteriorWalls();
 
 	// let previousSize = canvas.height;
 	// let ratio = canvas.height / previousSize;
@@ -138,7 +142,7 @@ function drawGrid() {
 	context.strokeStyle = pathColor;
 
 	for (let i = 0; i <= cSize; i = i + squareSize) {
-		
+	/***************TODO : tester un setTimeout pour voir ce que ça donne***************/
 		/***************rows***************/
 		context.moveTo(0, i);
 		context.lineTo(cSize, i);
@@ -153,7 +157,28 @@ function drawGrid() {
 }
 
 /**
- * @returns renders the canvas according to the 2D array canvasMap 60 times per second
+ * @returns draws the exterior walls
+ */
+function exteriorWalls() {
+	for (let i = 0; i < canvas.width / squareSize; i++) {
+		canvasMap[i] = [];
+		for (let j = 0; j < canvas.height / squareSize; j++) {
+			if (exteriorWallsTest(i, j)) {
+				canvasMap[i][j] = "wall";
+			}
+			else {
+				canvasMap[i][j] = "empty";
+			}
+		}
+	}
+	spawnStatus = false;
+	btnSpawn.innerHTML = "Place spawn : 1";
+	destinationStatus = false;
+	btnDestination.innerHTML = "Place destination : 1";
+}
+
+/**
+ * @returns renders the canvas according to the 2D array canvasMap
  */
 function renderCanvas() {
 	context.clearRect(0, 0, canvas.width, canvas.height);
@@ -184,25 +209,23 @@ function renderCanvas() {
 			}
 		}
 	}
-	setTimeout(() => {
-		requestAnimationFrame(renderCanvas);
-	}, 1000 / 60);
+	requestAnimationFrame(renderCanvas);
 }
 
 /**
- * @returns closes the resize popup
+ * @returns closes the popup
  */
 function clickResize() {
-	let element = btnResize.offsetParent;
-	clearTimeout(resizeElementTimeout);
+	let element = btnPopup.offsetParent;
+	clearTimeout(popupElementTimeout);
 	removeActive(element);
 	setTimeout(() => {
 		removeActive(element.offsetParent);
 	}, 500);
-	resizeActive = false;
+	popupActive = false;
 }
 
-/***************do one function instead of three***************/
+/***************TODO: one function instead of three***************/
 /**
  * @returns changes the value of btnStatus to "spawn"
  */
@@ -240,9 +263,9 @@ function clickCanvas(event) {
 		else {
 			let canvasX = Math.floor((event.clientX - canvas.offsetLeft) / squareSize);
 			let canvasY = Math.floor((event.clientY - canvas.offsetTop) / squareSize);
-			if (!(exteriorWalls(canvasX, canvasY))) {
-				/*********do one function instead of if/else if for the spawn******
-				 *********and destination because they do the exact same thing*****/
+			if (!(exteriorWallsTest(canvasX, canvasY))) {
+				/*********TODO: one function instead of if/else if for the spawn******
+				 *********and destination because they do the exact same thing********/
 				if (btnStatus == "spawn") {
 					if (canvasMap[canvasX][canvasY] == "spawn") {
 						canvasMap[canvasX][canvasY] = "empty";
@@ -307,27 +330,45 @@ function stopMoveCanvas() {
  * @returns starts the selected algorithm
  */
 function clickPlay() {
-	// TODO
+	if (spawnStatus && destinationStatus) {
+		triggerPopup("Il y a à la fois le spawn et la destination");
+	}
+	else if (spawnStatus && !destinationStatus) {
+		triggerPopup("Il manque le block de destination");
+	}
+	else if (!spawnStatus && destinationStatus) {
+		triggerPopup("Il manque le block de spawn");
+	}
+	else {
+		triggerPopup("Il manque à la fois le block de spawn et le block de destination");
+	}
+	btnPlay.addEventListener("click", clickPlay, {once: true});
 }
 
 /**
  * @returns resets the grid
  */
 function clickReset() {
-	// TODO
+	let imgReset = btnReset.lastElementChild;
+	imgReset.classList.add("active");
+	exteriorWalls();
+	setTimeout(() => {
+		removeActive(imgReset);
+		btnReset.addEventListener("click", clickReset, {once: true});
+	}, 1500);
 }
 
 canvasResponsive();
 window.addEventListener("resize", canvasResponsive);
-btnResize.addEventListener("click", clickResize);
+btnPopup.addEventListener("click", clickResize);
+
+requestAnimationFrame(renderCanvas);
 
 btnSpawn.addEventListener("click", clickSpawn);
 btnDestination.addEventListener("click", clickDestination);
 btnWall.addEventListener("click", clickWall);
 
-btnPlay.addEventListener("click", clickPlay);
-btnReset.addEventListener("click", clickReset);
-
-requestAnimationFrame(renderCanvas);
+btnPlay.addEventListener("click", clickPlay, {once: true});
+btnReset.addEventListener("click", clickReset, {once: true});
 
 canvas.addEventListener("click", clickCanvas);
