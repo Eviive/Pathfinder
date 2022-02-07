@@ -1,3 +1,6 @@
+//TODO: templates if every block is missing
+//TODO: do a larger cursor in order to place walls easily
+
 let body = document.body;
 let canvas = document.querySelector("canvas");
 let context = canvas.getContext("2d");
@@ -5,6 +8,7 @@ let context = canvas.getContext("2d");
 let btnPopup = document.querySelector("#btn-popup");
 let popupActive = false;
 let popupElementTimeout;
+let popupWrapperTimeout;
 
 let btnSpawn = document.querySelector("#btn-spawn");
 let btnDestination = document.querySelector("#btn-destination");
@@ -18,7 +22,7 @@ let destinationStatus = false;
 
 let squareSize = 17;
 let lineWidth = 2;
-let pathColor = "#d6d6d6";
+let pathColor = "#ffffff66";
 
 let canvasMap = [];
 
@@ -92,11 +96,13 @@ function triggerPopup(popupText) {
 	let popupSpan = document.querySelector(".popup-msg");
 	popupSpan.innerHTML = popupText;
 	popupActive = true;
+	clearTimeout(popupElementTimeout);
+	clearTimeout(popupWrapperTimeout);
 	popupWrapper.classList.add("active");
 	popupElement.classList.add("active");
 	popupElementTimeout = setTimeout(() => {
 		removeActive(popupElement);
-		setTimeout(() => {
+		popupWrapperTimeout = setTimeout(() => {
 			removeActive(popupWrapper);
 		}, 500);
 		popupActive = false;
@@ -116,7 +122,6 @@ function canvasResponsive(event) {
 	let bodyMinWidth = parseInt(window.getComputedStyle(body).getPropertyValue("min-width"));
 	canvas.height = Math.ceil(Math.max(Math.min(pourcentage(window.innerHeight), pourcentage(window.innerWidth)) / squareSize, pourcentage(bodyMinWidth) / squareSize)) * squareSize;
 	canvas.width = canvas.height;
-	drawGrid();
 
 	exteriorWalls();
 
@@ -142,7 +147,6 @@ function drawGrid() {
 	context.strokeStyle = pathColor;
 
 	for (let i = 0; i <= cSize; i = i + squareSize) {
-	/***************TODO : tester un setTimeout pour voir ce que ça donne***************/
 		/***************rows***************/
 		context.moveTo(0, i);
 		context.lineTo(cSize, i);
@@ -218,6 +222,7 @@ function renderCanvas() {
 function clickResize() {
 	let element = btnPopup.offsetParent;
 	clearTimeout(popupElementTimeout);
+	clearTimeout(popupWrapperTimeout);
 	removeActive(element);
 	setTimeout(() => {
 		removeActive(element.offsetParent);
@@ -225,28 +230,21 @@ function clickResize() {
 	popupActive = false;
 }
 
-/***************TODO: one function instead of three***************/
 /**
- * @returns changes the value of btnStatus to "spawn"
+ * @param {EventListenerObject} event the object returned by the eventlistener that triggered the function
+ * @returns changes the value of btnStatus according to which button triggered the event
  */
-function clickSpawn() {
-	btnStatus = "spawn";
+function clickStatus(event) {
+	if (event.target == btnSpawn) {
+		btnStatus = "spawn";
+	}
+	else if (event.target == btnDestination) {
+		btnStatus = "destination";
+	}
+	else if (event.target == btnWall) {
+		btnStatus = "wall";
+	}
 }
-
-/**
- * @returns changes the value of btnStatus to "destination"
- */
-function clickDestination() {
-	btnStatus = "destination";
-}
-
-/**
- * @returns changes the value of btnStatus to "wall"
- */
-function clickWall() {
-	btnStatus = "wall";
-}
-/************************************************************/
 
 /**
  * @param {EventListenerObject} event the object returned by the eventlistener that triggered the function
@@ -264,8 +262,6 @@ function clickCanvas(event) {
 			let canvasX = Math.floor((event.clientX - canvas.offsetLeft) / squareSize);
 			let canvasY = Math.floor((event.clientY - canvas.offsetTop) / squareSize);
 			if (!(exteriorWallsTest(canvasX, canvasY))) {
-				/*********TODO: one function instead of if/else if for the spawn******
-				 *********and destination because they do the exact same thing********/
 				if (btnStatus == "spawn") {
 					if (canvasMap[canvasX][canvasY] == "spawn") {
 						canvasMap[canvasX][canvasY] = "empty";
@@ -331,16 +327,10 @@ function stopMoveCanvas() {
  */
 function clickPlay() {
 	if (spawnStatus && destinationStatus) {
-		triggerPopup("Il y a à la fois le spawn et la destination");
-	}
-	else if (spawnStatus && !destinationStatus) {
-		triggerPopup("Il manque le block de destination");
-	}
-	else if (!spawnStatus && destinationStatus) {
-		triggerPopup("Il manque le block de spawn");
+		triggerPopup("Lancement de l'algorithme");
 	}
 	else {
-		triggerPopup("Il manque à la fois le block de spawn et le block de destination");
+		randomGeneration();
 	}
 	btnPlay.addEventListener("click", clickPlay, {once: true});
 }
@@ -355,7 +345,29 @@ function clickReset() {
 	setTimeout(() => {
 		removeActive(imgReset);
 		btnReset.addEventListener("click", clickReset, {once: true});
-	}, 1500);
+	}, 1000);
+}
+
+/**
+ * @returns generates a random spawn and destination
+ */
+function randomGeneration() {
+	let spawnX = Math.round(Math.random() * (((canvas.width - 2 * squareSize) / squareSize) - 1) + 1);
+	let spawnY = Math.round(Math.random() * (((canvas.width - 2 * squareSize) / squareSize) - 1) + 1);
+	if (!spawnStatus) {
+		canvasMap[spawnX][spawnY] = "spawn";
+		spawnStatus = true;
+	}
+	if (!destinationStatus) {
+		let destinationX;
+		let destinationY;
+		do {
+			destinationX = Math.round(Math.random() * (((canvas.width - 2 * squareSize) / squareSize) - 1) + 1);
+			destinationY = Math.round(Math.random() * (((canvas.width - 2 * squareSize) / squareSize) - 1) + 1);
+		} while (destinationX == spawnX && destinationY == spawnY);
+		canvasMap[destinationX][destinationY] = "destination";
+		destinationStatus = true;
+	}
 }
 
 canvasResponsive();
@@ -364,9 +376,9 @@ btnPopup.addEventListener("click", clickResize);
 
 requestAnimationFrame(renderCanvas);
 
-btnSpawn.addEventListener("click", clickSpawn);
-btnDestination.addEventListener("click", clickDestination);
-btnWall.addEventListener("click", clickWall);
+btnSpawn.addEventListener("click", clickStatus);
+btnDestination.addEventListener("click", clickStatus);
+btnWall.addEventListener("click", clickStatus);
 
 btnPlay.addEventListener("click", clickPlay, {once: true});
 btnReset.addEventListener("click", clickReset, {once: true});
