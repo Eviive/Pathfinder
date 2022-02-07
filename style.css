@@ -184,7 +184,7 @@ footer {
 }
 
 #btn-reset .active {
-	animation: reset 1.5s forwards;
+	animation: reset 1s forwards;
 }
 
 @keyframes reset {
