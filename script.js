@@ -20,7 +20,7 @@ let btnStatus = null;
 let spawnStatus = false;
 let destinationStatus = false;
 
-let squareSize = 17;
+let squareSize;
 let lineWidth = 2;
 let pathColor = "#ffffff66";
 
@@ -55,6 +55,8 @@ let pourcentage = (value) => {
 };
 
 class Square {
+	static ratio = 1;
+
 	constructor(xPos, yPos, size, color) {
 		this.xPos = xPos + lineWidth / 1.2;
 		this.yPos = yPos + lineWidth / 1.2;
@@ -64,11 +66,13 @@ class Square {
 
 	draw() {
 		context.fillStyle = this.color;
-		context.fillRect(this.xPos, this.yPos, this.size, this.size);
+		context.fillRect(this.xPos * Square.ratio, this.yPos * Square.ratio, this.size * Square.ratio, this.size);
 	}
 }
 
 class Circle {
+	static ratio = 1;
+
 	constructor(xPos, yPos, radius, color) {
 		this.xPos = xPos + squareSize / 2;
 		this.yPos = yPos + squareSize / 2;
@@ -79,7 +83,7 @@ class Circle {
 	draw() {
 		context.beginPath();
 		context.lineWidth = lineWidth;
-		context.arc(this.xPos, this.yPos, this.radius, 0, Math.PI * 2, false);
+		context.arc(this.xPos * Circle.ratio, this.yPos * Circle.ratio, this.radius * Circle.ratio, 0, Math.PI * 2, false);
 		context.fillStyle = this.color;
 		context.fill();
 		context.closePath();
@@ -113,27 +117,15 @@ function triggerPopup(popupText) {
  * @param {EventListenerObject} event the object returned by the eventlistener that triggered the function
  * @returns makes the canvas responsive
  */
-function canvasResponsive(event) {
+function canvasSize(event) {
 	/***************if the function is called by an event***************/
-	if (event && !popupActive && body.clientWidth > 500) {
+	if (event && !popupActive && body.clientWidth > parseInt(window.getComputedStyle(body).getPropertyValue("min-width"))) {
 		triggerPopup("Changing the size of your window will stop the algorithm.");
 	}
-	
-	let bodyMinWidth = parseInt(window.getComputedStyle(body).getPropertyValue("min-width"));
-	canvas.height = Math.ceil(Math.max(Math.min(pourcentage(window.innerHeight), pourcentage(window.innerWidth)) / squareSize, pourcentage(bodyMinWidth) / squareSize)) * squareSize;
-	canvas.width = canvas.height;
 
-	exteriorWalls();
-
-	// let previousSize = canvas.height;
-	// let ratio = canvas.height / previousSize;
-	// drawings.forEach(element => {
-	// 	element.xPos = element.xPos * ratio;
-	// 	element.yPos = element.yPos * ratio;
-	// 	element.width = element.width * ratio;
-	// 	element.height = element.height * ratio;
-	// 	element.updateSize();
-	// });
+	canvas.width = Math.min(.85 * body.clientWidth, .7 * body.clientHeight);
+	canvas.height = canvas.width;
+	squareSize = canvas.width / 40;
 }
 
 /**
@@ -166,7 +158,7 @@ function drawGrid() {
 function exteriorWalls() {
 	for (let i = 0; i < canvas.width / squareSize; i++) {
 		canvasMap[i] = [];
-		for (let j = 0; j < canvas.height / squareSize; j++) {
+		for (let j = 0; j < canvas.width / squareSize; j++) {
 			if (exteriorWallsTest(i, j)) {
 				canvasMap[i][j] = "wall";
 			}
@@ -370,12 +362,6 @@ function randomGeneration() {
 	}
 }
 
-canvasResponsive();
-window.addEventListener("resize", canvasResponsive);
-btnPopup.addEventListener("click", clickResize);
-
-requestAnimationFrame(renderCanvas);
-
 btnSpawn.addEventListener("click", clickStatus);
 btnDestination.addEventListener("click", clickStatus);
 btnWall.addEventListener("click", clickStatus);
@@ -384,3 +370,11 @@ btnPlay.addEventListener("click", clickPlay, {once: true});
 btnReset.addEventListener("click", clickReset, {once: true});
 
 canvas.addEventListener("click", clickCanvas);
+
+canvasSize();
+window.addEventListener("resize", canvasSize);
+btnPopup.addEventListener("click", clickResize);
+
+exteriorWalls();
+
+requestAnimationFrame(renderCanvas);
