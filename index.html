@@ -3,35 +3,30 @@
 <head>
 	<meta charset="UTF-8">
 	<link rel="stylesheet" href="style.css">
-	<script src="script.js" type="module" async></script>
+	<script src="script.js" type="module" defer></script>
 	<title>Pathfinding Algorithm</title>
 </head>
 <body>
-	<header>
-		<button id="btn-spawn">Place spawn : 1</button>
-		<button id="btn-destination">Place destination : 1</button>
-		<button id="btn-wall">Place walls</button>
-	</header>
-	
-	<canvas></canvas>
 
-	<div class="wrapper-popup">
-		<div class="popup">
-			<img src="Images/warning.svg" alt="Warning !" draggable="false">
-			<span class="popup-msg"></span>
-			<button id="btn-popup">
-				<img src="Images/close.svg" alt="Close" draggable="false">
-			</button>
+	<div id="menu">
+		<div class="title">
+			<h1>Settings</h1>
+		</div>
+		<div class="wrapper-btn">
+			<div>
+				<button id="btn-play" class="image">
+					<img src="Images/play.png" alt="Play" draggable="false">
+				</button>
+				<button id="btn-reset" class="image">
+					<img src="Images/reset.svg" alt="Reset" draggable="false">
+				</button>
+			</div>
 		</div>
 	</div>
 
-	<footer>
-		<button id="btn-play">
-			<img src="Images/play.png" alt="Play" draggable="false">
-		</button>
-		<button id="btn-reset">
-			<img src="Images/reset.svg" alt="Reset" draggable="false">
-		</button>
-	</footer>
+	<div id="visualizer">
+		<canvas></canvas>
+	</div>
+
 </body>
 </html>
