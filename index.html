@@ -3,7 +3,7 @@
 <head>
 	<meta charset="UTF-8">
 	<link rel="stylesheet" href="style.css">
-	<script src="script.js" type="module" defer></script>
+	<script src="script.js" defer></script>
 	<title>Pathfinding Algorithm</title>
 </head>
 <body>
@@ -12,8 +12,23 @@
 		<div class="title">
 			<h1>Settings</h1>
 		</div>
-		<div class="wrapper-btn">
-			<div>
+		<div class="wrapper-menu">
+			<div class="wrapper-slt">
+				<h2>Pathfinding algorithm</h2>
+				<select name="algo" id="slt-algo">
+					<option value="astar" selected>A*</option>
+					<option value="dijkstra">Dijkstra</option>
+				</select>
+			</div>
+			<div class="wrapper-slt">
+				<h2>Algorithm speed</h2>
+				<select name="speed" id="slt-speed">
+					<option value="slow">Slow</option>
+					<option value="medium" selected>Medium</option>
+					<option value="fast">Fast</option>
+				</select>
+			</div>
+			<div class="wrapper-btn">
 				<button id="btn-play" class="image">
 					<img src="Images/play.png" alt="Play" draggable="false">
 				</button>

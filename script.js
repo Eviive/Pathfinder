@@ -1,21 +1,21 @@
-// TODO: plusieurs algorithmes
-// TODO: plusieurs vitesses d'algorithme
+// TODO: légende
 // TODO: génération d'obstacles
+// TODO: drag & drop le spawn et la destination
 
-let body = document.body;
+console.dir(document.body);
+
 let canvas = document.querySelector("canvas");
 let context = canvas.getContext("2d");
 
 let btnPlay = document.querySelector("#btn-play");
 let btnReset = document.querySelector("#btn-reset");
 
-const lineWidth = 2;
 const colorWhite = "#ffffff";
 const colorGray = "#c9c9c9"
 const colorGreen = "#20ab07";
 const colorRed = "#ff0000";
 const colorLightBlue = "#0061ff";
-const colorDarkBlue = "#003080"
+const colorDarkBlue = "#003080";
 
 let canvasMap;
 let squareSize = 30;
@@ -25,9 +25,14 @@ let destinationX, destinationY;
 
 let distance;
 let visited;
-let predecessor;
+let parents;
 let foundPath;
-let launchedStatus = false;
+
+let gScore;
+let fScore;
+let openSet = [];
+
+let launchedStatus = null;
 
 
 /**
@@ -48,7 +53,7 @@ function createArray(length) {
 /**
  * @param {Number} x X position
  * @param {Number} y Y position
- * @returns {Boolean} checks if the coordinates are part of the exterior walls
+ * @returns {Boolean} checks if the coordinates are in or out of the grid
  */
 let outsideGridTest = (x, y) => {
 	if (x < 0 || y < 0 || x >= gridSizeWidth || y >= gridSizeHeight) {
@@ -58,17 +63,16 @@ let outsideGridTest = (x, y) => {
 };
 
 class Square {
-	constructor(xPos, yPos, xSize, ySize, color) {
+	constructor(xPos, yPos, size, color) {
 		this.xPos = xPos;
 		this.yPos = yPos;
-		this.xSize = xSize;
-		this.ySize = ySize;
+		this.size = size;
 		this.color = color;
 	}
 
 	draw() {
 		context.fillStyle = this.color;
-		context.fillRect(this.xPos, this.yPos, this.xSize, this.ySize);
+		context.fillRect(this.xPos, this.yPos, this.size, this.size);
 	}
 }
 
@@ -82,7 +86,7 @@ class Circle {
 
 	draw() {
 		context.beginPath();
-		context.lineWidth = lineWidth;
+		context.lineWidth = 2;
 		context.arc(this.xPos, this.yPos, this.radius, 0, Math.PI * 2, false);
 		context.fillStyle = this.color;
 		context.fill();
@@ -94,6 +98,7 @@ class Circle {
  * @returns adapts the size of the canvas
  */
 function canvasSize() {
+	let body = document.body;
 	let header = document.querySelector("#menu");
 	canvas.width = (body.clientWidth - header.clientWidth) - (body.clientWidth - header.clientWidth) % squareSize;
 	canvas.height = body.clientHeight - body.clientHeight % squareSize;
@@ -102,28 +107,30 @@ function canvasSize() {
 	canvasMap = createArray(gridSizeWidth, gridSizeHeight);
 	distance = createArray(gridSizeWidth, gridSizeHeight);
 	visited = createArray(gridSizeWidth, gridSizeHeight);
-	predecessor = createArray(gridSizeWidth, gridSizeHeight);
+	parents = createArray(gridSizeWidth, gridSizeHeight);
+	gScore = createArray(gridSizeWidth, gridSizeHeight);
+	fScore = createArray(gridSizeWidth, gridSizeHeight);
 	resetMap();
 }
 
 /**
- * @returns draws the exterior walls
+ * @returns resets the whole map
  */
 function resetMap() {
-	launchedStatus = false;
+	launchedStatus = null;
 	for (let i = 0; i < Math.round(canvas.width / squareSize); i++) {
 		for (let j = 0; j < Math.round(canvas.height / squareSize); j++) {
 			canvasMap[i][j] = "empty";
 		}
 	}
+	blockGeneration();
 	canvas.addEventListener("click", clickCanvas, {once: true});
-	randomGeneration();
 }
 
 /**
- * @returns generates a random spawn and destination
+ * @returns generates the spawn and the destination
  */
-function randomGeneration() {
+function blockGeneration() {
 	if (canvas.width + 100 < canvas.height) {
 		spawnX = destinationX = Math.floor(canvas.width / squareSize / 2);
 		spawnY = Math.floor(canvas.height / squareSize * 4/5);
@@ -143,42 +150,45 @@ function randomGeneration() {
  */
  function renderCanvas() {
 	context.clearRect(0, 0, canvas.width, canvas.height);
-	if (launchedStatus) {
+	if (launchedStatus == "astar") {
+		astar();
+	}
+	else if (launchedStatus == "dijkstra") {
 		dijkstra();
 	}
 	for (let i = 0; i < Math.round(canvas.width / squareSize); i++) {
 		for (let j = 0; j < Math.round(canvas.height / squareSize); j++) {
 			if (canvasMap[i][j] == "wall") {
-				let square = new Square(i * squareSize, j * squareSize, squareSize, squareSize, colorDarkBlue);
+				let square = new Square(i * squareSize, j * squareSize, squareSize, colorDarkBlue);
 				square.draw();
 			}
 			else if (canvasMap[i][j] == "spawn") {
-				let square = new Square(i * squareSize, j * squareSize, squareSize, squareSize, colorGreen);
+				let square = new Square(i * squareSize, j * squareSize, squareSize, colorGreen);
 				square.draw();
 			}
 			else if (canvasMap[i][j] == "destination") {
-				let square = new Square(i * squareSize, j * squareSize, squareSize, squareSize, colorRed);
+				let square = new Square(i * squareSize, j * squareSize, squareSize, colorRed);
 				square.draw();
 			}
 			else if (canvasMap[i][j] == "parcours") {
 				let square;
 				if ((i + j % 2) % 2 == 0) {
-					square = new Square(i * squareSize, j * squareSize, squareSize, squareSize, colorWhite);
+					square = new Square(i * squareSize, j * squareSize, squareSize, colorWhite);
 				}
 				else {
-					square = new Square(i * squareSize, j * squareSize, squareSize, squareSize, colorGray);
+					square = new Square(i * squareSize, j * squareSize, squareSize, colorGray);
 				}
 				square.draw();
 				let circle = new Circle(i * squareSize, j * squareSize, squareSize / 5, colorRed);
 				circle.draw();
 			}
-			else if(visited[i][j] && launchedStatus) {
+			else if(visited[i][j] && launchedStatus != null) {
 				let square;
 				if ((i + j % 2) % 2 == 0) {
-					square = new Square(i * squareSize, j * squareSize, squareSize, squareSize, colorWhite);
+					square = new Square(i * squareSize, j * squareSize, squareSize, colorWhite);
 				}
 				else {
-					square = new Square(i * squareSize, j * squareSize, squareSize, squareSize, colorGray);
+					square = new Square(i * squareSize, j * squareSize, squareSize, colorGray);
 				}
 				square.draw();
 				let circle = new Circle(i * squareSize, j * squareSize, squareSize / 7, colorLightBlue);
@@ -187,29 +197,38 @@ function randomGeneration() {
 			else if (canvasMap[i][j] == "empty") {
 				let square;
 				if ((i + j % 2) % 2 == 0) {
-					square = new Square(i * squareSize, j * squareSize, squareSize, squareSize, colorWhite);
+					square = new Square(i * squareSize, j * squareSize, squareSize, colorWhite);
 				}
 				else {
-					square = new Square(i * squareSize, j * squareSize, squareSize, squareSize, colorGray);
+					square = new Square(i * squareSize, j * squareSize, squareSize, colorGray);
 				}
 				square.draw();
 			}
 		}
 	}
-	requestAnimationFrame(renderCanvas);
-	// setTimeout(() => {
-	// 	renderCanvas();
-	// }, 1000/(60*5));
+	let sltSpeedValue = document.querySelector("#slt-speed").value;
+	if (sltSpeedValue == "slow" || launchedStatus == null) {
+		requestAnimationFrame(renderCanvas);
+	}
+	else if (sltSpeedValue == "medium") {
+		setTimeout(() => {
+			renderCanvas();
+		}, 1000/(60*2));
+	}
+	else {
+		setTimeout(() => {
+			renderCanvas();
+		}, 1000/(60*6));
+	}
 }
 
 /***************Click handlers***************/
 
 /**
- * @param {EventListenerObject} event the object returned by the eventlistener that triggered the function
- * @returns places blocks according to the value of btnStatus
+ * @returns activates the mousemove event that will place the walls
  */
 function clickCanvas() {
-	if (!launchedStatus) {
+	if (launchedStatus == null) {
 		canvas.addEventListener("mousemove", startMoveCanvas);
 		canvas.addEventListener("click", stopMoveCanvas, {once: true});
 		canvas.addEventListener("mouseout", stopMoveCanvas, {once: true});
@@ -220,9 +239,15 @@ function clickCanvas() {
  * @returns starts the selected algorithm
  */
  function clickPlay() {
-	dijkstraInit();
-	launchedStatus = true;
-	btnPlay.addEventListener("click", clickPlay, {once: true});
+	let sltAlgoValue = document.querySelector("#slt-algo").value;
+	if (sltAlgoValue == "astar") {
+		astarInit();
+		launchedStatus = sltAlgoValue;
+	}
+	else if (sltAlgoValue == "dijkstra") {
+		dijkstraInit();
+		launchedStatus = sltAlgoValue;
+	}
 }
 
 /**
@@ -242,7 +267,7 @@ function clickReset() {
 
 /**
  * @param {EventListenerObject} event the object returned by the eventlistener that triggered the function
- * @returns places walls at the position of the mouse if there isn't already a spawn or a destination
+ * @returns places walls at the position of the mouse if there isn't already the spawn or the destination
  */
  function startMoveCanvas(event) {
 	let canvasX = Math.floor((event.clientX - canvas.offsetLeft) / squareSize);
@@ -267,7 +292,7 @@ function stopMoveCanvas() {
  */
  function dijkstraInit() {
 	canvas.removeEventListener("click", clickCanvas);
-	foundPath=false;
+	foundPath = false;
 	for (let i = 0; i < gridSizeWidth; i++) {
 		for (let j = 0; j < gridSizeHeight; j++) {
 			distance[i][j] = Number.MAX_VALUE;
@@ -278,7 +303,7 @@ function stopMoveCanvas() {
 		}
 	}
 	distance[spawnX][spawnY] = 0;
-	predecessor = createArray(gridSizeWidth, gridSizeHeight);
+	parents = createArray(gridSizeWidth, gridSizeHeight);
 }
 
 /**
@@ -328,7 +353,7 @@ function dijsktraDistance(x1, y1, x2, y2) {
 	let majDistance = distance[x1][y1] + dijkstraWeight(x1,y1,x2,y2);
 	if (!outsideGridTest(x2, y2) && distance[x2][y2] > majDistance) {
 		distance[x2][y2] = majDistance;
-		predecessor[x2][y2] = {x: x1, y: y1};
+		parents[x2][y2] = {x: x1, y: y1};
 	}
 }
 
@@ -336,16 +361,14 @@ function dijsktraDistance(x1, y1, x2, y2) {
  * @returns the shortest path between the spawn and the destination
  */
 function dijkstra() {
-	let paire;
-	let tempX, tempY;
 	if (!foundPath) {
-		paire = dijkstraMinimum();
-		if (paire.x != -1) {
-			visited[paire.x][paire.y] = true;
+		let current = dijkstraMinimum();
+		if (current.x != -1) {
+			visited[current.x][current.y] = true;
 			for (let i = -1; i <= 1; i++) {
 				for (let j = -1; j <= 1; j++) {
 					if (i != 0 || j != 0) {
-						dijsktraDistance(paire.x, paire.y, paire.x + i, paire.y + j);
+						dijsktraDistance(current.x, current.y, current.x + i, current.y + j);
 					}
 				}
 			}
@@ -353,14 +376,14 @@ function dijkstra() {
 	}
 	let cursorX = destinationX;
 	let cursorY = destinationY;
-	if (predecessor[destinationX][destinationY]) {
+	if (parents[destinationX][destinationY]) {
 		foundPath = true;
 		while (cursorX != spawnX || cursorY != spawnY) {
 			if ((cursorX != destinationX || cursorY != destinationY) && (cursorX != spawnX || cursorY != spawnY)) {
 				canvasMap[cursorX][cursorY] = "parcours";
 			}
-			tempX = predecessor[cursorX][cursorY].x;
-			tempY = predecessor[cursorX][cursorY].y;
+			let tempX = parents[cursorX][cursorY].x;
+			let tempY = parents[cursorX][cursorY].y;
 			cursorX = tempX;
 			cursorY = tempY;
 		}
@@ -368,7 +391,116 @@ function dijkstra() {
 	}
 }
 
-btnPlay.addEventListener("click", clickPlay, {once: true});
+/***************A* functions***************/
+
+/**
+ * @returns sets up the grid for the A* algorithm
+ */
+function astarInit() {
+	foundPath = false;
+	for (let i = 0; i < gridSizeWidth; i++) {
+		for (let j = 0; j < gridSizeHeight; j++) {
+			gScore[i][j] = Number.MAX_VALUE;
+			fScore[i][j] = Number.MAX_VALUE;
+			visited[i][j] = false;
+			if (canvasMap[i][j] == "parcours") {
+				canvasMap[i][j] = "empty";
+			}
+		}
+	}
+	gScore[spawnX][spawnY] = 0;
+	fScore[spawnX][spawnY] = astarPytha(spawnX, spawnY);
+	parents = createArray(gridSizeWidth, gridSizeHeight);
+	openSet = [];
+	openSet.push({x: spawnX, y: spawnY});
+}
+
+/**
+ * @param {Number} x X coordinate of one point
+ * @param {Number} y Y coordinate of one point
+ * @returns the distance between the point and the destination (via the Pythagore theoreme)
+ */
+function astarPytha(x, y) {
+	return Math.sqrt((destinationX - x) * (destinationX - x) + (destinationY - y) * (destinationY - y));
+}
+
+/**
+ * @returns finds the minimum unvisited distance
+ */
+function astarMinimum() {
+	let minDistance = Number.MAX_VALUE;
+	let minX = -1, minY = -1, index = -1;
+	for (let i = 0; i < openSet.length; i++) {
+		if (fScore[openSet[i].x][openSet[i].y] < minDistance) {
+			minDistance = fScore[openSet[i].x][openSet[i].y];
+			minX = openSet[i].x;
+			minY = openSet[i].y;
+			index = i;
+		}
+	}
+	return {x: minX, y: minY, i: index};
+}
+
+/**
+ * @param {Number} x X coordinate of one point
+ * @param {Number} y Y coordinate of one point
+ * @returns true if the point is in the openSet, otherwise false
+ */
+function astarNotPresent(x, y) {
+	let notPresent = true;
+	for (let i = 0; i < openSet.length; i++) {
+		if (openSet[i].x == x && openSet[i].y == y) {
+			notPresent = false;
+		}
+	}
+	return notPresent;
+}
+
+/**
+ * @returns the shortest path between the spawn and the destination
+ */
+function astar() {
+	if (openSet.length > 0 && !foundPath) {
+		let current = astarMinimum();
+		if (current.x != -1) {
+			if (current.x == destinationX && current.y == destinationY) {
+				let cursorX = destinationX;
+				let cursorY = destinationY;
+				foundPath = true;
+				while (cursorX != spawnX || cursorY != spawnY) {
+					if ((cursorX != destinationX || cursorY != destinationY) && (cursorX != spawnX || cursorY != spawnY)) {
+						canvasMap[cursorX][cursorY] = "parcours";
+					}
+					let tempX = parents[cursorX][cursorY].x;
+					let tempY = parents[cursorX][cursorY].y;
+					cursorX = tempX;
+					cursorY = tempY;
+				}
+				openSet = [];
+			}
+			openSet.splice(current.i, 1);
+			let gScoreAttempt;
+			for (let i = -1; i <= 1; i++) {
+				for (let j = -1; j <= 1; j++) {
+					if (i != 0 || j != 0) {
+						gScoreAttempt = gScore[current.x][current.y] + dijkstraWeight(current.x, current.y, current.x + i, current.y + j);
+						if (!outsideGridTest(current.x + i, current.y + j) && gScoreAttempt < gScore[current.x + i][current.y + j]) {
+							parents[current.x + i][current.y + j] = {x: current.x, y: current.y};
+							gScore[current.x + i][current.y + j] = gScoreAttempt;
+							fScore[current.x + i][current.y + j] = gScore[current.x + i][current.y + j] + astarPytha(current.x + i, current.y + j);
+							if (astarNotPresent(current.x + i, current.y + j)) {
+								openSet.push({x: current.x + i, y: current.y + j});
+								visited[current.x + i][current.y + j] = true;
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+btnPlay.addEventListener("click", clickPlay);
 btnReset.addEventListener("click", clickReset, {once: true});
 
 canvas.addEventListener("click", clickCanvas, {once: true});
