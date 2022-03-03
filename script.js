@@ -1,5 +1,3 @@
-console.dir(document.body);
-
 let canvas = document.querySelector("canvas");
 let context = canvas.getContext("2d", {alpha: false});
 
@@ -95,12 +93,12 @@ class Circle {
 function canvasSize() {
 	let body = document.body;
 	let header = document.querySelector("#menu");
-	canvas.width = Math.floor((body.clientWidth - header.clientWidth) - ((body.clientWidth - header.clientWidth) % squareSize));
-	canvas.height = Math.floor(body.clientHeight - (body.clientHeight % squareSize));
+	console.log(body.clientWidth, body.clientHeight);
+	console.log(header.clientWidth);
+	canvas.width = (body.clientWidth - header.clientWidth) - ((body.clientWidth - header.clientWidth) % squareSize);
+	canvas.height = body.clientHeight - (body.clientHeight % squareSize);
 	gridSizeWidth = canvas.width / squareSize;
 	gridSizeHeight = canvas.height / squareSize;
-	console.log((body.clientWidth - header.clientWidth) - ((body.clientWidth - header.clientWidth) % squareSize), body.clientHeight - (body.clientHeight % squareSize));
-	console.log(canvas.width / squareSize, canvas.height / squareSize);
 	canvasMap = createArray(gridSizeWidth, gridSizeHeight);
 	distance = createArray(gridSizeWidth, gridSizeHeight);
 	visited = createArray(gridSizeWidth, gridSizeHeight);
