@@ -1,3 +1,5 @@
+let body = document.body;
+let header = document.querySelector("#menu");
 let canvas = document.querySelector("canvas");
 let context = canvas.getContext("2d", {alpha: false});
 
@@ -91,8 +93,6 @@ class Circle {
  * @returns adapts the size of the canvas
  */
 function canvasSize() {
-	let body = document.body;
-	let header = document.querySelector("#menu");
 	console.log(body.clientWidth, body.clientHeight);
 	console.log(header.clientWidth);
 	canvas.width = (body.clientWidth - header.clientWidth) - ((body.clientWidth - header.clientWidth) % squareSize);
