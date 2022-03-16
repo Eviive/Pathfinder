@@ -1,15 +1,19 @@
+let body = document.body;
+let menu = document.querySelector("#menu");
 let canvas = document.querySelector("canvas");
 let context = canvas.getContext("2d", {alpha: false});
 
 let btnPlay = document.querySelector("#btn-play");
 let btnReset = document.querySelector("#btn-reset");
 
-const colorWhite = "#ffffff";
-const colorGray = "#c9c9c9"
-const colorGreen = "#20ab07";
-const colorRed = "#ff0000";
-const colorLightBlue = "#0061ff";
-const colorDarkBlue = "#003080";
+const colors = {
+	white: "#ffffff",
+	gray: "#c9c9c9",
+	green: "#20ab07",
+	red: "#ff0000",
+	lightBlue: "#0061ff",
+	darkBlue: "#003080"
+}
 
 let canvasMap;
 let squareSize = 30;
@@ -91,9 +95,7 @@ class Circle {
  * @returns adapts the size of the canvas
  */
 function canvasSize() {
-	let body = document.body;
-	let headerWidth = 400;
-	canvas.width = (body.clientWidth - headerWidth) - ((body.clientWidth - headerWidth) % squareSize);
+	canvas.width = (body.clientWidth - menu.width) - ((body.clientWidth - menu.width) % squareSize);
 	canvas.height = body.clientHeight - (body.clientHeight % squareSize);
 	gridSizeWidth = canvas.width / squareSize;
 	gridSizeHeight = canvas.height / squareSize;
@@ -152,48 +154,48 @@ function blockGeneration() {
 	for (let i = 0; i < Math.round(canvas.width / squareSize); i++) {
 		for (let j = 0; j < Math.round(canvas.height / squareSize); j++) {
 			if (canvasMap[i][j] == "wall") {
-				let square = new Square(i * squareSize, j * squareSize, squareSize, colorDarkBlue);
+				let square = new Square(i * squareSize, j * squareSize, squareSize, colors.darkBlue);
 				square.draw();
 			}
 			else if (canvasMap[i][j] == "spawn") {
-				let square = new Square(i * squareSize, j * squareSize, squareSize, colorGreen);
+				let square = new Square(i * squareSize, j * squareSize, squareSize, colors.green);
 				square.draw();
 			}
 			else if (canvasMap[i][j] == "destination") {
-				let square = new Square(i * squareSize, j * squareSize, squareSize, colorRed);
+				let square = new Square(i * squareSize, j * squareSize, squareSize, colors.red);
 				square.draw();
 			}
 			else if (canvasMap[i][j] == "parcours") {
 				let square;
 				if ((i + j % 2) % 2 == 0) {
-					square = new Square(i * squareSize, j * squareSize, squareSize, colorWhite);
+					square = new Square(i * squareSize, j * squareSize, squareSize, colors.white);
 				}
 				else {
-					square = new Square(i * squareSize, j * squareSize, squareSize, colorGray);
+					square = new Square(i * squareSize, j * squareSize, squareSize, colors.gray);
 				}
 				square.draw();
-				let circle = new Circle(i * squareSize, j * squareSize, squareSize / 5, colorRed);
+				let circle = new Circle(i * squareSize, j * squareSize, squareSize / 5, colors.red);
 				circle.draw();
 			}
 			else if(visited[i][j] && launchedStatus != null) {
 				let square;
 				if ((i + j % 2) % 2 == 0) {
-					square = new Square(i * squareSize, j * squareSize, squareSize, colorWhite);
+					square = new Square(i * squareSize, j * squareSize, squareSize, colors.white);
 				}
 				else {
-					square = new Square(i * squareSize, j * squareSize, squareSize, colorGray);
+					square = new Square(i * squareSize, j * squareSize, squareSize, colors.gray);
 				}
 				square.draw();
-				let circle = new Circle(i * squareSize, j * squareSize, squareSize / 7, colorLightBlue);
+				let circle = new Circle(i * squareSize, j * squareSize, squareSize / 7, colors.lightBlue);
 				circle.draw();
 			}
 			else if (canvasMap[i][j] == "empty") {
 				let square;
 				if ((i + j % 2) % 2 == 0) {
-					square = new Square(i * squareSize, j * squareSize, squareSize, colorWhite);
+					square = new Square(i * squareSize, j * squareSize, squareSize, colors.white);
 				}
 				else {
-					square = new Square(i * squareSize, j * squareSize, squareSize, colorGray);
+					square = new Square(i * squareSize, j * squareSize, squareSize, colors.gray);
 				}
 				square.draw();
 			}
@@ -283,7 +285,7 @@ function stopMoveCanvas() {
 /**
  * @returns sets up the grid for the Dijkstra algorithm
  */
- function dijkstraInit() {
+function dijkstraInit() {
 	canvas.removeEventListener("click", clickCanvas);
 	foundPath = false;
 	for (let i = 0; i < gridSizeWidth; i++) {
@@ -498,6 +500,7 @@ btnReset.addEventListener("click", clickReset, {once: true});
 
 canvas.addEventListener("click", clickCanvas, {once: true});
 
+menu.width = 400;
 canvasSize();
 window.addEventListener("resize", canvasSize);
 
