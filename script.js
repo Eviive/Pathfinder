@@ -95,7 +95,7 @@ class Circle {
  * @returns adapts the size of the canvas
  */
 function canvasSize() {
-	canvas.width = (body.clientWidth - menu.width) - ((body.clientWidth - menu.width) % squareSize);
+	canvas.width = (body.clientWidth - menu.clientWidth) - ((body.clientWidth - menu.clientWidth) % squareSize);
 	canvas.height = body.clientHeight - (body.clientHeight % squareSize);
 	gridSizeWidth = canvas.width / squareSize;
 	gridSizeHeight = canvas.height / squareSize;
@@ -500,7 +500,6 @@ btnReset.addEventListener("click", clickReset, {once: true});
 
 canvas.addEventListener("click", clickCanvas, {once: true});
 
-menu.width = 400;
 canvasSize();
 window.addEventListener("resize", canvasSize);
 

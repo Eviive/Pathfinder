@@ -8,14 +8,13 @@ html {
 
 body {
 	--bg-color: #c9c9c9;
-	--menu-width: 400px;
 	width: 100%;
 	min-width: 500px;
 	height: 100%;
 	position: relative;
 	margin: 0;
 	display: flex;
-	justify-content: space-evenly;
+	justify-content: space-between;
 	align-items: center;
 	font-family: 'Source Sans Pro', sans-serif;
 	background-color: var(--bg-color);
@@ -25,9 +24,8 @@ body {
 /***************menu***************/
 
 #menu {
-	box-sizing: border-box;
-	width: var(--menu-width);
 	height: 100%;
+	flex: 0 0 400px;
 	background-color: #ffffff;
 }
 
@@ -138,8 +136,8 @@ body {
 /***************visualizer***************/
 
 #visualizer {
-	width: calc(100% - var(--menu-width));
 	display: flex;
 	justify-content: center;
 	align-items: center;
+	flex-grow: 1;
 }
