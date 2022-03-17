@@ -495,14 +495,18 @@ function astar() {
 	}
 }
 
-btnPlay.addEventListener("click", clickPlay);
-btnReset.addEventListener("click", clickReset, {once: true});
+let main = () => {
+	btnPlay.addEventListener("click", clickPlay);
+	btnReset.addEventListener("click", clickReset, {once: true});
+	
+	canvas.addEventListener("click", clickCanvas, {once: true});
+	
+	canvasSize();
+	window.addEventListener("resize", canvasSize);
+	
+	resetMap();
+	
+	requestAnimationFrame(renderCanvas);
+};
 
-canvas.addEventListener("click", clickCanvas, {once: true});
-
-canvasSize();
-window.addEventListener("resize", canvasSize);
-
-resetMap();
-
-requestAnimationFrame(renderCanvas);
+window.onload = main;

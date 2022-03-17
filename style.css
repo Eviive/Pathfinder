@@ -24,8 +24,8 @@ body {
 /***************menu***************/
 
 #menu {
+	width: 400px;
 	height: 100%;
-	flex: 0 0 400px;
 	background-color: #ffffff;
 }
 
