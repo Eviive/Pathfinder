@@ -1,4 +1,4 @@
-import { createArray, weighDistance, isOutsideGrid } from "/scripts/utils.js";
+import { createArray, weighDistance, isOutsideGrid } from "../utils.js";
 
 let foundPath;
 let distance;
