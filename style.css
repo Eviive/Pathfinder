@@ -9,7 +9,7 @@ html {
 body {
 	--bg-color: #c9c9c9;
 	width: 100%;
-	min-width: 500px;
+	min-width: 525px;
 	height: 100%;
 	position: relative;
 	margin: 0;
@@ -24,7 +24,7 @@ body {
 /***************menu***************/
 
 #menu {
-	min-width: 400px;
+	min-width: 310px;
 	height: 100%;
 	background-color: #ffffff;
 }
@@ -39,8 +39,9 @@ body {
 
 #menu .title h1 {
 	margin: 0;
-	font-size: 3rem;
 	color: #ffffff;
+	font-size: 3rem;
+	letter-spacing: 2px;
 }
 
 #menu .wrapper-menu {
@@ -76,11 +77,6 @@ body {
 	border-radius: 7px;
 	box-shadow: #000000 0 0 3px 0px;
 	transition: box-shadow .15s ease-in-out;
-}
-
-#menu .wrapper-menu select:hover,
-#menu .wrapper-menu select:focus {
-	box-shadow: #000000 0 0 6px 0px;
 }
 
 /***************play / reset***************/
